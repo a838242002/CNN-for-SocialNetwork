@@ -8,11 +8,12 @@ import tensorflow as tf
 def kernal_variable(scope, shape):
 	kernal = tf.get_variable(scope + "w",
 			shape=shape, dtype=tf.float32,
-			initializer=tf.glorot_uniform_initializer(seed=1))
+			initializer=tf.glorot_uniform_initializer(seed=100))
 	return kernal
 
-def bias_variable(shape):
-	initial = tf.constant(0.1, shape=shape, name='b')
+def bias_variable(scope, shape):
+	
+	initial=tf.constant(0.1, shape=shape, name='b')
 	return tf.Variable(initial)
 
 def conv_op(input_op, name, kh, kw, n_out, dh, dw, p):
@@ -23,7 +24,7 @@ def conv_op(input_op, name, kh, kw, n_out, dh, dw, p):
 
 		conv = tf.nn.conv2d(input_op, kernel, (1, dh, dw, 1),
 							padding='SAME')
-		biases = bias_variable([n_out])
+		biases = bias_variable(scope, [n_out])
 		
 		z = tf.nn.bias_add(conv, biases)
 		activation = tf.nn.relu(z, name = scope)
@@ -31,15 +32,18 @@ def conv_op(input_op, name, kh, kw, n_out, dh, dw, p):
 
 		return activation
 
-def fc_op(input_op, name, n_out, p):
+def fc_op(input_op, name, n_out, p, activation=True):
 	n_in = input_op.get_shape()[-1].value
 
 	with tf.name_scope(name) as scope:
 		kernel = kernal_variable(scope, [n_in, n_out])
 
-		biases = bias_variable([n_out])
+		biases = bias_variable(scope, [n_out])
 
-		activation = tf.nn.relu_layer(input_op, kernel, biases, name=scope)
+		if activation == True:
+			activation = tf.nn.relu_layer(input_op, kernel, biases, name=scope)
+		else:
+			activation = tf.matmul(input_op, kernel) + biases
 		p += [kernel, biases]
 
 		return activation

@@ -67,13 +67,9 @@ def read_tfrecord(filename):
 		plt.imshow(image)
 		plt.show()
 
-def read_and_decode(filename_queue, IMAGE_HEIGHT, IMAGE_WIDTH, comp=True, b_size=32):
-
+def read_and_decode(filename_queue, IMAGE_HEIGHT, IMAGE_WIDTH):
 	compression = tf.python_io.TFRecordCompressionType.GZIP
-	if comp == True:
-		reader = tf.TFRecordReader(options=tf.python_io.TFRecordOptions(compression))
-	else:
-		reader = tf.TFRecordReader()
+	reader = tf.TFRecordReader(options=tf.python_io.TFRecordOptions(compression))
 
 	_, serialized_example = reader.read(filename_queue)
 
@@ -101,61 +97,48 @@ def read_and_decode(filename_queue, IMAGE_HEIGHT, IMAGE_WIDTH, comp=True, b_size
 
 	images, labels = tf.train.shuffle_batch(
 		[resized_image, label],
-		batch_size=32,
+		batch_size=500,
 		capacity=1000,
 		num_threads=1,
 		min_after_dequeue=500)
 
 	return images, labels
 
-def parse_function(serialized_example):
-	dict1={
-		      'height': tf.FixedLenFeature([], tf.int64),
-		      'width': tf.FixedLenFeature([], tf.int64),
-		      'image_string': tf.FixedLenFeature([], tf.string),
-		      'label': tf.FixedLenFeature([], tf.float32)
-		      }
-	features = tf.parse_single_example(
-		    serialized_example, dict1)
-
-	image = tf.decode_raw(features['image_string'], tf.float32)
-
-	label = tf.cast(features['label'], tf.float32)
-
-	height = tf.cast(features['height'], tf.int32)
-	width = tf.cast(features['width'], tf.int32)
-
-	image = tf.reshape(image, [height, width, 1])
-
-	resized_image = tf.image.resize_image_with_crop_or_pad(image=image,
-		target_height=height,
-		target_width=width)
-
-	return features
 
 if __name__ == '__main__':
 	# with open('trainning_333_1.pickle', 'rb') as file:
 	# 	data = pickle.load(file)
-	# 	# test_data = np.reshape(data[:, :3330], (-1, 10, 333)).astype(np.float32)
-	# training_data = np.repeat(np.reshape(data[0:7119, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
-	# training_labels = data[0:7119, 3330:]
-	# print(training_data.shape)
-	# write_tfrecord('training7119.tfrecords', training_data, training_labels)
-
-	# validation_data = np.repeat(np.reshape(data[7119:8136, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
-	# validation_labels = data[7119:8136, 3330:]
-	# print(validation_data.shape)
-	# write_tfrecord('validation1017.tfrecords', validation_data, validation_labels)
-
-	# test_data = np.repeat(np.reshape(data[8136:, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
-	# test_labels = data[8136:, 3330:]
-	# print(test_data.shape)
-	# write_tfrecord('test_data2034.tfrecords', test_data, test_labels)
+	# test_data = np.repeat(np.reshape(data[:, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
 	
+	
+
+	# labels = data[:, 3330:]
 	# print(labels[1,:])
+	# write_tfrecord('test2.tfrecords', test_data, labels)
+	# read_tfrecord('test2.tfrecords')
+
+	filename_queue = tf.train.string_input_producer(
+		['test2.tfrecords'], num_epochs=10)
+	images, labels = read_and_decode(filename_queue, 300, 333)
+
+	init_op = tf.group(tf.global_variables_initializer(),
+						tf.local_variables_initializer())
 	
-	
-	
-	read_tfrecord('training7119.tfrecords')
+	with tf.Session() as sess:
+		
+		
+		sess.run(init_op)
+
+		coord = tf.train.Coordinator()
+		threads = tf.train.start_queue_runners(coord=coord)
+
+		for i in range(3):
+
+			img, lab = sess.run([images, labels])
+
+			print(img.shape)
+
+		coord.request_stop()
+		coord.join(threads)
 
 	
