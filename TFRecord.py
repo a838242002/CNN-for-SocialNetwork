@@ -19,8 +19,6 @@ def write_tfrecord(filename, data, labels):
 	tfrecords_filename = filename
 
 	writer = tf.python_io.TFRecordWriter(tfrecords_filename, options=tf.python_io.TFRecordOptions(compression))
-
-	count = 0
 	
 
 	for record in data:
@@ -32,17 +30,20 @@ def write_tfrecord(filename, data, labels):
 		label = labels[count, 0]
 		image_string = record.tostring()
 
+		feature = {}
+		
+		feature['height']= tf.train.Feature(int64_list=tf.train.Int64List(value=[height])),
+		feature['width']= tf.train.Feature(int64_list=tf.train.Int64List(value=[width])),
+		feature['image_string']= tf.train.Feature(bytes_list=tf.train.BytesList(value=[image_string])),
+		feature['label']= tf.train.Feature(float_list = tf.train.FloatList(value=[label]))
+			
+		
+
 		# print('height >> {0}, width >> {1}'.format(height, width))
-		example = tf.train.Example(features=tf.train.Features(feature={
-			'height': _int64_feature(height),
-			'width': _int64_feature(width),
-			'image_string': _bytes_feature(image_string),
-			'label': _float_feature([label])
-			}))
+		features=tf.train.Features(feature=feature)
+		example = tf.train.Example(features=features)
 
 		writer.write(example.SerializeToString())
-		print(count)
-		count += 1
 
 	writer.close()
 
@@ -108,15 +109,16 @@ def read_and_decode(filename_queue, IMAGE_HEIGHT, IMAGE_WIDTH, comp=True, b_size
 
 	return images, labels
 
-def parse_function(serialized_example):
-	dict1={
-		      'height': tf.FixedLenFeature([], tf.int64),
-		      'width': tf.FixedLenFeature([], tf.int64),
-		      'image_string': tf.FixedLenFeature([], tf.string),
-		      'label': tf.FixedLenFeature([], tf.float32)
-		      }
+def parse_function(proto):
+
 	features = tf.parse_single_example(
-		    serialized_example, dict1)
+		    proto,
+		    features={
+		      'height': tf.FixedLenFeature((), tf.int64),
+		      'width': tf.FixedLenFeature((), tf.int64),
+		      'image_string': tf.FixedLenFeature((), tf.string),
+		      'label': tf.FixedLenFeature((), tf.float32)
+		      })
 
 	image = tf.decode_raw(features['image_string'], tf.float32)
 
@@ -128,14 +130,14 @@ def parse_function(serialized_example):
 	image = tf.reshape(image, [height, width, 1])
 
 	resized_image = tf.image.resize_image_with_crop_or_pad(image=image,
-		target_height=height,
-		target_width=width)
+		target_height=300,
+		target_width=333)
 
-	return features
+	return resized_image, label
 
 if __name__ == '__main__':
-	# with open('trainning_333_1.pickle', 'rb') as file:
-	# 	data = pickle.load(file)
+	with open('trainning_333_1.pickle', 'rb') as file:
+		data = pickle.load(file)
 	# 	# test_data = np.reshape(data[:, :3330], (-1, 10, 333)).astype(np.float32)
 	# training_data = np.repeat(np.reshape(data[0:7119, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
 	# training_labels = data[0:7119, 3330:]
@@ -145,7 +147,7 @@ if __name__ == '__main__':
 	# validation_data = np.repeat(np.reshape(data[7119:8136, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
 	# validation_labels = data[7119:8136, 3330:]
 	# print(validation_data.shape)
-	# write_tfrecord('validation1017.tfrecords', validation_data, validation_labels)
+	# write_tfrecord('validation1017.tfrecord', validation_data, validation_labels)
 
 	# test_data = np.repeat(np.reshape(data[8136:, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
 	# test_labels = data[8136:, 3330:]
