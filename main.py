@@ -18,12 +18,13 @@ def input_img_lab(height, width, channel):
 
 	return x, y, keep_prob
 
-def read_tfrecord(filenames):
+def read_tfrecord(filenames, b_size, train=False):
 	dataset = tf.data.TFRecordDataset(filenames,compression_type='GZIP')
 	new_dataset = dataset.map(TFRecord.parse_function)
 	new_dataset = new_dataset.repeat()
-	new_dataset = new_dataset.batch(32)
-	new_dataset = new_dataset.shuffle(buffer_size=10000)
+	new_dataset = new_dataset.batch(b_size)
+	if train == True:
+		new_dataset = new_dataset.shuffle(buffer_size=100)
 	iterator = new_dataset.make_one_shot_iterator()
 	next_element = iterator.get_next()
 	return next_element
@@ -34,13 +35,13 @@ if __name__ == '__main__':
 	IMAGE_HEIGHT = 300
 	IMAGE_WIDTH = 333
 	IMAGE_CHANNEL = 1
-	MODEL = VGG
+	MODEL = AlexNet
 
 	x, y, keep_prob = input_img_lab(IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNEL)
 	predictions = MODEL.inference_op(x, keep_prob)
 
 	loss = MODEL.loss(predictions, y)
-	train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
+	train_op = tf.train.AdamOptimizer(0.0005).minimize(loss)
 	
 	logits = MODEL.get_logits(predictions)
 	accuracy = MODEL.predict(logits, y)
@@ -52,8 +53,15 @@ if __name__ == '__main__':
 	# 	['test2.tfrecords'], num_epochs=10)
 	# images, labels = TFRecord.read_and_decode(filename_queue, IMAGE_HEIGHT, IMAGE_WIDTH)
 
-	filenames = ["training7119.tfrecords"]
-	next_element = read_tfrecord(filenames)
+	trainingfile = ["training7119.tfrecords"]
+	next_training = read_tfrecord(trainingfile, 32, True)
+
+	validfile = ["validation1017.tfrecords"]
+	next_valid = read_tfrecord(validfile, 30)
+
+	testfile = ["test_data2034.tfrecords"]
+	next_test = read_tfrecord(testfile, 2034)
+
 
 
 	
@@ -63,19 +71,22 @@ if __name__ == '__main__':
 						tf.local_variables_initializer())
 		
 		sess.run(init_op)
+		
 
-		# coord = tf.train.Coordinator()
-		# threads = tf.train.start_queue_runners(coord=coord)
+		# # coord = tf.train.Coordinator()
+		# # threads = tf.train.start_queue_runners(coord=coord)
 
-		for i in range(5000):
-			img, lab = sess.run(next_element)
-			# print(sum(lab))
+		# for i in range(5000):
+		# 	img, lab = sess.run(next_training)
+		# 	img_valid, lab_valid = sess.run(next_valid)
+		# 	# print(sum(lab))
 			
-			_, loss_value = sess.run([train_op, loss], feed_dict={x: img, y: lab, keep_prob:0.7})
-			# print(sess.run(logits, feed_dict={x: img, y: lab, keep_prob:1.0}))
-			if i % 10 == 0:
-				pred = sess.run(accuracy, feed_dict={x: img, y:lab, keep_prob:0.7})
-				print('loss >> {0}, pred >> {1}'.format(loss_value, pred))
+		# 	_, loss_value = sess.run([train_op, loss], feed_dict={x: img, y: lab, keep_prob:0.7})
+		# 	# print(sess.run(logits, feed_dict={x: img, y: lab, keep_prob:1.0}))
+		# 	if i % 10 == 0:
+		# 		pred = sess.run(accuracy, feed_dict={x: img_valid, y:lab_valid, keep_prob:0.7})
+		# 		print('loss >> {0}, pred >> {1}'.format(loss_value, pred))
 
-		coord.request_stop()
-		coord.join(threads)
+		# coord.request_stop()
+		# coord.join(threads)
+		writer = tf.summary.FileWriter("logs/", sess.graph)

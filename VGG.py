@@ -45,18 +45,20 @@ def get_logits(logits):
 	return logits
 
 def loss(logits, labels):
-	labels = tf.one_hot(tf.cast(labels, tf.int64), 2)
-	cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(
-		logits=logits, labels=labels, name='cross_entropy_per_example')
-	cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
-	tf.add_to_collection('losses', cross_entropy_mean)
-	return tf.add_n(tf.get_collection('losses'), name='total_loss')
+	with tf.name_scope('loss_function') as scope:
+		labels = tf.one_hot(tf.cast(labels, tf.int64), 2)
+		cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(
+			logits=logits, labels=labels, name='cross_entropy_per_example')
+		cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
+		tf.add_to_collection('losses', cross_entropy_mean)
+		return tf.add_n(tf.get_collection('losses'), name='total_loss')
 
 def predict(logits, labels):
-	pred = tf.nn.softmax(logits)
-	correct_prediction = tf.equal(tf.argmax(pred, 1), labels)
-	evaluation_step = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-	return evaluation_step
+	with tf.name_scope('Accuracy') as scope:
+		pred = tf.nn.softmax(logits)
+		correct_prediction = tf.equal(tf.argmax(pred, 1), labels, name='accuracy_pre_example')
+		evaluation_step = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy_rate')
+		return evaluation_step
 
 
 
