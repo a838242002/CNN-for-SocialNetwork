@@ -31,13 +31,13 @@ def inference_op(input_op, keep_prob):
 	flattened_shape = shape[1].value * shape[2].value * shape[3].value
 	reshape1 = tf.reshape(pool5, [-1, flattened_shape], name="resh1")
 
-	fc6 = fc_op(reshape1, "fc6", 512, p)
-	fc6_drop = tf.nn.dropout(fc6, keep_prob, name="fc6_drop")
+	fc6 = fc_op(reshape1, "fc6", 1024, p, True, keep_prob)
 
-	fc7 = fc_op(fc6_drop, name="fc7", n_out=256, p=p)
-	fc7_drop = tf.nn.dropout(fc7, keep_prob, name="fc7_drop")
 
-	fc8 = fc_op(fc7_drop, name="fc8", n_out=2, p=p, activation=False)
+	fc7 = fc_op(fc6, name="fc7", n_out=512, p=p, activation=True, keep_prob=keep_prob)
+
+
+	fc8 = fc_op(fc7, name="fc8", n_out=2, p=p, activation=False, keep_prob=1)
 
 	return fc8
 	

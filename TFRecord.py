@@ -136,28 +136,37 @@ def parse_function(proto):
 	return resized_image, label
 
 if __name__ == '__main__':
-	with open('trainning_333_1.pickle', 'rb') as file:
-		data = pickle.load(file)
-	# 	# test_data = np.reshape(data[:, :3330], (-1, 10, 333)).astype(np.float32)
-	# training_data = np.repeat(np.reshape(data[0:7119, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
-	# training_labels = data[0:7119, 3330:]
-	# print(training_data.shape)
-	# write_tfrecord('training7119.tfrecords', training_data, training_labels)
 
-	# validation_data = np.repeat(np.reshape(data[7119:8136, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
-	# validation_labels = data[7119:8136, 3330:]
-	# print(validation_data.shape)
-	# write_tfrecord('validation1017.tfrecord', validation_data, validation_labels)
+	while(True):
+		c1 = "1: Convert to TFRecord with gzip comprassion"
+		c2 = "2: Read TFRecord"
+		c3 = "3: Exit"
+		choose = int(input(c1 + "\n" + c2 + "\n" + c3 + "\n***>>>===>>>***"))
+		if(choose == 1):
+			with open('trainning_333_1.pickle', 'rb') as file:
+				data = pickle.load(file)
+			# 	# test_data = np.reshape(data[:, :3330], (-1, 10, 333)).astype(np.float32)
+			# training_data = np.repeat(np.reshape(data[0:7119, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
+			# training_labels = data[0:7119, 3330:]
+			# print(training_data.shape)
+			# write_tfrecord('training7119.tfrecords', training_data, training_labels)
 
-	# test_data = np.repeat(np.reshape(data[8136:, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
-	# test_labels = data[8136:, 3330:]
-	# print(test_data.shape)
-	# write_tfrecord('test_data2034.tfrecords', test_data, test_labels)
-	
-	# print(labels[1,:])
-	
-	
-	
-	read_tfrecord('training7119.tfrecords')
+			# validation_data = np.repeat(np.reshape(data[7119:8136, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
+			# validation_labels = data[7119:8136, 3330:]
+			# print(validation_data.shape)
+			# write_tfrecord('validation1017.tfrecord', validation_data, validation_labels)
+
+			# test_data = np.repeat(np.reshape(data[8136:, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
+			# test_labels = data[8136:, 3330:]
+			# print(test_data.shape)
+			# write_tfrecord('test_data2034.tfrecords', test_data, test_labels)
+			
+			# print(labels[1,:])
+		elif(choose == 2):
+			read_tfrecord('training7119.tfrecords')
+		elif(choose == 3):
+			break
+		else:
+			print("Choose again.")
 
 	

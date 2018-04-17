@@ -32,7 +32,7 @@ def conv_op(input_op, name, kh, kw, n_out, dh, dw, p):
 
 		return activation
 
-def fc_op(input_op, name, n_out, p, activation=True):
+def fc_op(input_op, name, n_out, p, activation=True, keep_prob=1):
 	n_in = input_op.get_shape()[-1].value
 
 	with tf.name_scope(name) as scope:
@@ -42,9 +42,13 @@ def fc_op(input_op, name, n_out, p, activation=True):
 
 		if activation == True:
 			activation = tf.nn.relu_layer(input_op, kernel, biases, name=scope)
+			activation = tf.nn.dropout(activation, keep_prob, name= "drop")
 		else:
 			activation = tf.matmul(input_op, kernel) + biases
+			activation = tf.nn.dropout(activation, keep_prob, name= "drop")
 		p += [kernel, biases]
+
+		
 
 		return activation
 

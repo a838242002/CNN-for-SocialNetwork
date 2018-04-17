@@ -18,7 +18,7 @@ def input_img_lab(height, width, channel):
 
 	return x, y, keep_prob
 
-def read_tfrecord(filenames, b_size, train=False):
+def loading_tfrecord(filenames, b_size, train=False):
 	dataset = tf.data.TFRecordDataset(filenames,compression_type='GZIP')
 	new_dataset = dataset.map(TFRecord.parse_function)
 	new_dataset = new_dataset.repeat()
@@ -41,7 +41,7 @@ if __name__ == '__main__':
 	predictions = MODEL.inference_op(x, keep_prob)
 
 	loss = MODEL.loss(predictions, y)
-	train_op = tf.train.AdamOptimizer(0.0005).minimize(loss)
+	train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
 	
 	logits = MODEL.get_logits(predictions)
 	accuracy = MODEL.predict(logits, y)
@@ -54,39 +54,46 @@ if __name__ == '__main__':
 	# images, labels = TFRecord.read_and_decode(filename_queue, IMAGE_HEIGHT, IMAGE_WIDTH)
 
 	trainingfile = ["training7119.tfrecords"]
-	next_training = read_tfrecord(trainingfile, 32, True)
+	next_training = loading_tfrecord(trainingfile, 32, True)
 
 	validfile = ["validation1017.tfrecords"]
-	next_valid = read_tfrecord(validfile, 30)
+	next_valid = loading_tfrecord(validfile, 30)
 
 	testfile = ["test_data2034.tfrecords"]
-	next_test = read_tfrecord(testfile, 2034)
+	next_test = loading_tfrecord(testfile, 2034)
 
-
+	choose = int(input('1: Training CNN model, 2: Generate CNN model graph >> '))
 
 	
-	
-	with tf.Session() as sess:
-		init_op = tf.group(tf.global_variables_initializer(),
-						tf.local_variables_initializer())
-		
-		sess.run(init_op)
-		
-
-		# # coord = tf.train.Coordinator()
-		# # threads = tf.train.start_queue_runners(coord=coord)
-
-		# for i in range(5000):
-		# 	img, lab = sess.run(next_training)
-		# 	img_valid, lab_valid = sess.run(next_valid)
-		# 	# print(sum(lab))
+	if (choose == 1):
+		with tf.Session() as sess:
+			init_op = tf.group(tf.global_variables_initializer(),
+							tf.local_variables_initializer())
 			
-		# 	_, loss_value = sess.run([train_op, loss], feed_dict={x: img, y: lab, keep_prob:0.7})
-		# 	# print(sess.run(logits, feed_dict={x: img, y: lab, keep_prob:1.0}))
-		# 	if i % 10 == 0:
-		# 		pred = sess.run(accuracy, feed_dict={x: img_valid, y:lab_valid, keep_prob:0.7})
-		# 		print('loss >> {0}, pred >> {1}'.format(loss_value, pred))
+			sess.run(init_op)
+			
 
-		# coord.request_stop()
-		# coord.join(threads)
-		writer = tf.summary.FileWriter("logs/", sess.graph)
+			coord = tf.train.Coordinator()
+			threads = tf.train.start_queue_runners(coord=coord)
+
+			for i in range(5000):
+				img, lab = sess.run(next_training)
+				img_valid, lab_valid = sess.run(next_valid)
+				# print(sum(lab))
+				
+				_, loss_value = sess.run([train_op, loss], feed_dict={x: img, y: lab, keep_prob:0.5})
+				# print(sess.run(logits, feed_dict={x: img, y: lab, keep_prob:1.0}))
+				if i % 10 == 0:
+					pred = sess.run(accuracy, feed_dict={x: img_valid, y:lab_valid, keep_prob:0.5})
+					print('loss >> {0}, pred >> {1}'.format(loss_value, pred))
+
+			coord.request_stop()
+			coord.join(threads)
+	elif (choose == 2):
+		with tf.Session() as sess:
+			init_op = tf.group(tf.global_variables_initializer(),
+							tf.local_variables_initializer())
+			
+			sess.run(init_op)
+			
+			writer = tf.summary.FileWriter("logs/", sess.graph)
