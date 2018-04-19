@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
+import pickle, glob
 
 
 
@@ -20,7 +20,7 @@ def write_tfrecord(filename, data, labels):
 
 	writer = tf.python_io.TFRecordWriter(tfrecords_filename, options=tf.python_io.TFRecordOptions(compression))
 	
-
+	count = 0
 	for record in data:
 		
 
@@ -44,6 +44,7 @@ def write_tfrecord(filename, data, labels):
 		example = tf.train.Example(features=features)
 
 		writer.write(example.SerializeToString())
+		count += 1
 
 	writer.close()
 
@@ -141,31 +142,33 @@ if __name__ == '__main__':
 		c1 = "1: Convert to TFRecord with gzip comprassion"
 		c2 = "2: Read TFRecord"
 		c3 = "3: Exit"
-		choose = int(input(c1 + "\n" + c2 + "\n" + c3 + "\n***>>>===>>>***"))
+		choose = int(input(c1 + "\n" + c2 + "\n" + c3 + "\n>> "))
 		if(choose == 1):
-			with open('trainning_333_1.pickle', 'rb') as file:
-				data = pickle.load(file)
-			# 	# test_data = np.reshape(data[:, :3330], (-1, 10, 333)).astype(np.float32)
-			# training_data = np.repeat(np.reshape(data[0:7119, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
-			# training_labels = data[0:7119, 3330:]
-			# print(training_data.shape)
-			# write_tfrecord('training7119.tfrecords', training_data, training_labels)
+			dirs = input('Please input dir. >> ')
+			files = glob.glob(dirs + '/*.pickle')
+			print(files)
+			for file in files:
+				with open(file, 'rb') as file:
+					data = pickle.load(file)
+				print(data.shape)
+				# size = data.shape[1] - 1
+				# weight = 333
+				# height = size // 333
+				# h_repeat = 300 // height
+				# training_data = np.repeat(np.reshape(data[:, :size], (-1, height, weight)), h_repeat, axis=1).astype(np.float32)
+				# training_labels = data[:, size:]
+				# print(training_data.shape)
+				# print(training_labels.shape)
+				# write_tfrecord(filename + '.tfrecords', training_data, training_labels)
 
-			# validation_data = np.repeat(np.reshape(data[7119:8136, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
-			# validation_labels = data[7119:8136, 3330:]
-			# print(validation_data.shape)
-			# write_tfrecord('validation1017.tfrecord', validation_data, validation_labels)
-
-			# test_data = np.repeat(np.reshape(data[8136:, :3330], (-1, 10, 333)), 30, axis=1).astype(np.float32)
-			# test_labels = data[8136:, 3330:]
-			# print(test_data.shape)
-			# write_tfrecord('test_data2034.tfrecords', test_data, test_labels)
-			
-			# print(labels[1,:])
 		elif(choose == 2):
-			read_tfrecord('training7119.tfrecords')
+			filename = input('Please input file name. >> ')
+			read_tfrecord(filename + '.tfrecords')
+
 		elif(choose == 3):
+			print(glob.glob('*.py'))
 			break
+
 		else:
 			print("Choose again.")
 

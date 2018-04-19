@@ -21,13 +21,13 @@ def input_img_lab(height, width, channel):
 def loading_tfrecord(filenames, b_size, train=False):
 	dataset = tf.data.TFRecordDataset(filenames,compression_type='GZIP')
 	new_dataset = dataset.map(TFRecord.parse_function)
-	new_dataset = new_dataset.repeat()
 	new_dataset = new_dataset.batch(b_size)
 	if train == True:
-		new_dataset = new_dataset.shuffle(buffer_size=100)
+		# new_dataset = new_dataset.shuffle(buffer_size=100)
+		new_dataset = new_dataset.repeat()
 	iterator = new_dataset.make_one_shot_iterator()
-	next_element = iterator.get_next()
-	return next_element
+	# next_element = iterator.get_next()
+	return iterator
 
 
 if __name__ == '__main__':
@@ -53,7 +53,7 @@ if __name__ == '__main__':
 	# 	['test2.tfrecords'], num_epochs=10)
 	# images, labels = TFRecord.read_and_decode(filename_queue, IMAGE_HEIGHT, IMAGE_WIDTH)
 
-	trainingfile = ["training7119.tfrecords"]
+	trainingfile = ["training7119.tfrecords", "test_data2034.tfrecords"]
 	next_training = loading_tfrecord(trainingfile, 32, True)
 
 	validfile = ["validation1017.tfrecords"]
@@ -75,17 +75,27 @@ if __name__ == '__main__':
 
 			coord = tf.train.Coordinator()
 			threads = tf.train.start_queue_runners(coord=coord)
+			next_train_e = next_training.get_next()
 
 			for i in range(5000):
-				img, lab = sess.run(next_training)
-				img_valid, lab_valid = sess.run(next_valid)
+				img, lab = sess.run(next_train_e)
 				# print(sum(lab))
 				
 				_, loss_value = sess.run([train_op, loss], feed_dict={x: img, y: lab, keep_prob:0.5})
 				# print(sess.run(logits, feed_dict={x: img, y: lab, keep_prob:1.0}))
-				if i % 10 == 0:
-					pred = sess.run(accuracy, feed_dict={x: img_valid, y:lab_valid, keep_prob:0.5})
-					print('loss >> {0}, pred >> {1}'.format(loss_value, pred))
+				count = 0
+				sum_pred = 0.0
+				if(i % 10 == 0 and i != 0):
+					try:
+						while True:
+							img_valid, lab_valid = sess.run(next_valid.get_next())
+							pred = sess.run(accuracy, feed_dict={x: img_valid, y:lab_valid, keep_prob:0.5})
+							sum_pred = sum_pred + pred
+							count += 1
+					except tf.errors.OutOfRangeError:
+						next_valid = loading_tfrecord(validfile, 30)
+
+					print('loss >> {0}, pred >> {1}'.format(loss_value, sum_pred / float(count)))
 
 			coord.request_stop()
 			coord.join(threads)
@@ -97,3 +107,24 @@ if __name__ == '__main__':
 			sess.run(init_op)
 			
 			writer = tf.summary.FileWriter("logs/", sess.graph)
+	elif (choose == 3):
+		with tf.Session() as sess:
+			init_op = tf.group(tf.global_variables_initializer(),
+							tf.local_variables_initializer())
+			
+			sess.run(init_op)
+			count = 0
+			sum_pred = 0.0
+			for i in range(2):
+				try:
+					while True:
+						img_valid, lab_valid = sess.run(next_valid.get_next())
+						pred = sess.run(accuracy, feed_dict={x: img_valid, y:lab_valid, keep_prob:0.5})
+						sum_pred = sum_pred + pred
+						count += 1
+						print('count{0} >> pred >> {1}'.format(count, sum_pred / float(count)))
+				except tf.errors.OutOfRangeError:
+					print('end')
+					next_valid = loading_tfrecord(validfile, 30)
+
+				print('pred >> {0}'.format(sum_pred / float(count)))
